@@ -233,6 +233,10 @@
         </div>
         <div id="tripDistance" class="stat-value" style="color:var(--amber)">0.00 km</div>
         <div>
+          <div class="stat-label flex gap-1"><span>Time</span><span class="opacity-50">(Tot/Mov)</span></div>
+          <div id="tripTime" class="stat-value mb-3" style="color:var(--accent); font-size: 1.1rem; letter-spacing: 0.05em">0m / 0m</div>
+        </div>
+        <div>
           <div id="avgLabel" class="toggle-chip mb-1" title="Tap to toggle">
             <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0l-4-4m4 4l-4 4M4 17h8m-8 0l4-4m-4 4l4 4"/>
@@ -397,6 +401,7 @@
     const maxSpeedEl   = document.getElementById('maxSpeed');
     const minSpeedEl   = document.getElementById('minSpeed');
     const tripDistanceEl = document.getElementById('tripDistance');
+    const tripTimeEl     = document.getElementById('tripTime');
     const avgSpeedEl   = document.getElementById('avgSpeed');
     const avgLabel     = document.getElementById('avgLabel');
     const avgLabelText = document.getElementById('avgLabelText');
@@ -549,6 +554,14 @@
     }
 
     // ---- UI updates ----
+    function formatTime(hours) {
+      if (!hours) return '0m';
+      const h = Math.floor(hours);
+      const m = Math.floor((hours - h) * 60);
+      if (h > 0) return `${h}h${m}m`;
+      return `${m}m`;
+    }
+
     function updateDisplay() {
       const dispSpeed = DISPLAY_UNITS === UNITS.mph ? currentSpeed * 0.621371 : currentSpeed;
       const [intPart, decPart] = dispSpeed.toFixed(1).split('.');
@@ -571,6 +584,7 @@
       const avgStr = DISPLAY_UNITS === UNITS.mph ? (avg * 0.621371).toFixed(1) : avg.toFixed(1);
 
       tripDistanceEl.textContent = distStr;
+      if (tripTimeEl) tripTimeEl.textContent = `${formatTime(totTime)} / ${formatTime(movTime)}`;
       avgSpeedEl.textContent = avgStr + ' ' + DISPLAY_UNITS;
 
       const atm = getAllTimeMax();
@@ -599,12 +613,18 @@
         const avgStr = DISPLAY_UNITS === UNITS.mph ? (avg * 0.621371).toFixed(1) : avg.toFixed(1);
 
         return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px"
-                     class="flex items-center justify-between px-4 py-3">
-                  <div class="text-xs font-semibold opacity-50">${date}</div>
-                  <div class="flex gap-4 text-xs font-bold" style="font-family:'Rajdhani',sans-serif;font-size:0.85rem">
-                    <span style="color:var(--green)">↑ ${max} ${DISPLAY_UNITS}</span>
-                    <span style="color:var(--amber)">${distStr}</span>
-                    <span style="color:var(--blue)">⌀ ${avgStr} ${DISPLAY_UNITS}</span>
+                     class="flex flex-col justify-center px-4 py-3 gap-2">
+                  <div class="flex items-center justify-between">
+                    <div class="text-xs font-semibold opacity-50">${date}</div>
+                    <div class="flex gap-4 text-xs font-bold" style="font-family:'Rajdhani',sans-serif;font-size:0.85rem">
+                      <span style="color:var(--green)">↑ ${max} ${DISPLAY_UNITS}</span>
+                      <span style="color:var(--amber)">${distStr}</span>
+                      <span style="color:var(--blue)">⌀ ${avgStr} ${DISPLAY_UNITS}</span>
+                    </div>
+                  </div>
+                  <div class="flex justify-end gap-3 text-[0.65rem] opacity-60 font-medium tracking-wide">
+                    <span>总计/Total: ${formatTime(totTime)}</span>
+                    <span>运动/Moving: ${formatTime(movTime)}</span>
                   </div>
                 </div>`;
       }).join('');
