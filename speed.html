@@ -310,6 +310,17 @@
 
       <!-- Speed stats -->
       <article class="stat-card flex flex-col justify-between space-y-4 hover:bg-white/5 transition-colors">
+        <!-- Clock -->
+        <div class="flex items-center justify-between">
+          <div>
+            <header class="stat-label">Time</header>
+            <div id="clockDisplay" class="stat-value" style="color:#fff;font-size:1.1rem;letter-spacing:0.04em">--:--</div>
+          </div>
+          <div class="text-right">
+            <header class="stat-label">Heading</header>
+            <div id="headingDisplay" class="stat-value" style="color:var(--accent)">--</div>
+          </div>
+        </div>
         <div>
           <header class="stat-label flex items-center justify-between">
             <span>Today Max</span>
@@ -317,13 +328,15 @@
           </header>
           <div id="maxSpeed" class="stat-value" style="color:var(--green)">0 km/h</div>
         </div>
-        <div>
-          <header class="stat-label">Today Min</header>
-          <div id="minSpeed" class="stat-value" style="color:var(--amber)">0 km/h</div>
-        </div>
-        <div class="pt-2 border-t border-white/10">
-          <header class="stat-label">All-time Max</header>
-          <div id="allTimeMax" class="stat-value" style="color:var(--accent)">0 km/h</div>
+        <div class="pt-2 border-t border-white/10 flex items-end justify-between">
+          <div>
+            <header class="stat-label">All-time Max</header>
+            <div id="allTimeMax" class="stat-value" style="color:var(--accent)">0 km/h</div>
+          </div>
+          <div class="text-right">
+            <header class="stat-label">GPS Accuracy</header>
+            <div id="gpsAccuracy" class="stat-value" style="color:#555;font-size:1rem">--</div>
+          </div>
         </div>
       </article>
 
@@ -338,12 +351,12 @@
           </button>
         </div>
         <div id="tripDistance" class="stat-value" style="color:var(--amber)">0.00 km</div>
-        
+
         <div>
-          <header class="stat-label flex gap-1"><span>Time</span><span class="opacity-50">(Tot/Mov)</span></header>
-          <div id="tripTime" class="stat-value bg-black/20 rounded px-2 py-1 inline-block mt-1" style="color:var(--accent); font-size: 1.05rem; letter-spacing: 0.05em">0m / 0m</div>
+          <header class="stat-label">Moving Time</header>
+          <div id="tripTime" class="stat-value" style="color:var(--accent)">0m</div>
         </div>
-        
+
         <div class="pt-2 border-t border-white/10">
           <button id="avgLabel" class="toggle-chip mb-2 border-dashed hover:bg-blue-500/20 w-fit" title="Tap to toggle">
             <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -417,6 +430,8 @@
     let currentSpeed = 0;
     let maxSpeed = 0;
     let minSpeed = 0;
+    let currentHeading = null;
+    let currentAccuracy = null;
     let todayKey = new Date().toISOString().slice(0, 10);
     let watchId = null;
     let isGpsActive = false;
@@ -435,7 +450,6 @@
     const currentSpeedEl    = document.getElementById('currentSpeed');
     const currentSpeedDecEl = document.getElementById('currentSpeedDec');
     const maxSpeedEl   = document.getElementById('maxSpeed');
-    const minSpeedEl   = document.getElementById('minSpeed');
     const tripDistanceEl = document.getElementById('tripDistance');
     const tripTimeEl     = document.getElementById('tripTime');
     const avgSpeedEl   = document.getElementById('avgSpeed');
@@ -446,6 +460,9 @@
     const needleShadow = document.getElementById('needleShadow');
     const gpsDot       = document.getElementById('gpsDot');
     const gpsStatus    = document.getElementById('gpsStatus');
+    const clockEl      = document.getElementById('clockDisplay');
+    const headingEl    = document.getElementById('headingDisplay');
+    const gpsAccuracyEl = document.getElementById('gpsAccuracy');
     const ticksContainer = document.getElementById('ticks');
     const historyListEl = document.getElementById('historyList');
     const drawerHeader     = document.getElementById('drawerHeader');
@@ -646,13 +663,12 @@
 
       const fmt = v => (DISPLAY_UNITS === UNITS.mph ? (v * 0.621371).toFixed(1) : v.toFixed(1)) + ' ' + DISPLAY_UNITS;
       maxSpeedEl.textContent = fmt(maxSpeed);
-      minSpeedEl.textContent = fmt(minSpeed);
 
       const entry = getTodayEntry();
       const dist = entry.distance || 0;
       const movTime = entry.movingTime || 0;
       const totTime = entry.totalTime || 0;
-      
+
       const timeToUse = avgMode === 'moving' ? movTime : totTime;
       const avg = timeToUse > 0 ? (dist / timeToUse) : 0;
 
@@ -660,12 +676,36 @@
       const avgStr = DISPLAY_UNITS === UNITS.mph ? (avg * 0.621371).toFixed(1) : avg.toFixed(1);
 
       tripDistanceEl.textContent = distStr;
-      if (tripTimeEl) tripTimeEl.textContent = `${formatTime(totTime)} / ${formatTime(movTime)}`;
+      if (tripTimeEl) tripTimeEl.textContent = formatTime(movTime);
       avgSpeedEl.textContent = avgStr + ' ' + DISPLAY_UNITS;
 
       const atm = getAllTimeMax();
       allTimeMaxEl.textContent = (DISPLAY_UNITS === UNITS.mph ? (atm * 0.621371).toFixed(1) : atm.toFixed(1))
                                + ' ' + DISPLAY_UNITS;
+
+      // Heading
+      if (headingEl) {
+        if (currentHeading !== null && !isNaN(currentHeading)) {
+          const dirs = ['N','NE','E','SE','S','SW','W','NW'];
+          headingEl.textContent = dirs[Math.round(currentHeading / 45) % 8];
+          headingEl.style.color = 'var(--accent)';
+        } else {
+          headingEl.textContent = '--';
+          headingEl.style.color = '#555';
+        }
+      }
+
+      // GPS Accuracy
+      if (gpsAccuracyEl) {
+        if (currentAccuracy !== null) {
+          gpsAccuracyEl.textContent = Math.round(currentAccuracy) + 'm';
+          gpsAccuracyEl.style.color = currentAccuracy < 10 ? 'var(--green)' : currentAccuracy < 25 ? 'var(--amber)' : 'var(--red)';
+        } else {
+          gpsAccuracyEl.textContent = '--';
+          gpsAccuracyEl.style.color = '#555';
+        }
+      }
+
       setNeedleAngle(dispSpeed);
     }
 
@@ -758,6 +798,8 @@
       saveTodayEntry(entry);
       maxSpeed = entry.maxSpeed;
       minSpeed = entry.minSpeed;
+      currentAccuracy = pos.coords.accuracy;
+      currentHeading = (pos.coords.heading !== null && !isNaN(pos.coords.heading)) ? pos.coords.heading : currentHeading;
 
       updateDisplay();
       renderHistory();
@@ -944,6 +986,15 @@
       }
       updateDisplay();
       renderHistory();
+
+      // ------- Real-time clock -------
+      function tickClock() {
+        if (!clockEl) return;
+        const now = new Date();
+        clockEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      }
+      tickClock();
+      setInterval(tickClock, 1000);
     }
 
     // ======================  Event Listeners  ======================
