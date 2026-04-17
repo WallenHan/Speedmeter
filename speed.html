@@ -27,9 +27,17 @@
       --border: rgba(255,255,255,0.08);
     }
 
-    * { -webkit-tap-highlight-color: transparent; }
+    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
 
-    body { font-family: 'Inter', sans-serif; background: #050508; }
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background: #050508; 
+      /* Safe area support for notched phones */
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
 
     /* ── Gauge ── */
     .gauge-wrap {
@@ -197,69 +205,32 @@
 <body class="bg-[#050508] text-white overflow-x-hidden select-none">
 
   <!-- Theme toggle -->
-  <button id="themeToggle" title="Switch theme">🏎</button>
+  <button id="themeToggle" title="Switch theme">
+    <svg id="iconF1Race" class="w-5 h-5 text-current opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <rect x="3" y="4" width="18" height="16" rx="2" stroke-width="2"></rect>
+      <path stroke-linecap="round" stroke-width="2" d="M8 10h8M8 14h4" />
+    </svg>
+    <svg id="iconAnalog" class="w-5 h-5 text-current opacity-80 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10" stroke-width="2"></circle>
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12l4-4" />
+      <circle cx="12" cy="12" r="2" fill="currentColor"></circle>
+    </svg>
+  </button>
 
   <!-- ────── Main ────── -->
-  <main class="flex flex-col landscape:flex-row items-center justify-around min-h-[100dvh] p-4 pb-16 landscape:pb-14 gap-6 landscape:gap-4">
+  <main class="flex flex-col landscape:flex-row-reverse items-center justify-center min-h-[100dvh] w-full max-w-6xl mx-auto p-4 pb-20 landscape:pb-4 gap-8 landscape:gap-12">
 
-    <!-- Stats column -->
-    <div class="flex flex-row landscape:flex-col gap-3 w-full landscape:w-44 landscape:justify-center">
-
-      <!-- Speed stats -->
-      <div class="stat-card flex-1 landscape:flex-none space-y-3">
-        <div>
-          <div class="stat-label">Today Max</div>
-          <div id="maxSpeed" class="stat-value" style="color:var(--green)">0 km/h</div>
-        </div>
-        <div>
-          <div class="stat-label">Today Min</div>
-          <div id="minSpeed" class="stat-value" style="color:var(--amber)">0 km/h</div>
-        </div>
-        <div>
-          <div class="stat-label">All-time Max</div>
-          <div id="allTimeMax" class="stat-value" style="color:var(--accent)">0 km/h</div>
-        </div>
-      </div>
-
-      <!-- Trip stats -->
-      <div class="stat-card flex-1 landscape:flex-none space-y-3">
-        <div class="flex items-center justify-between">
-          <div class="stat-label">Distance</div>
-          <button id="resetDistanceBtn" class="opacity-40 hover:opacity-80 transition-opacity" title="Reset trip">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-            </svg>
-          </button>
-        </div>
-        <div id="tripDistance" class="stat-value" style="color:var(--amber)">0.00 km</div>
-        <div>
-          <div class="stat-label flex gap-1"><span>Time</span><span class="opacity-50">(Tot/Mov)</span></div>
-          <div id="tripTime" class="stat-value mb-3" style="color:var(--accent); font-size: 1.1rem; letter-spacing: 0.05em">0m / 0m</div>
-        </div>
-        <div>
-          <div id="avgLabel" class="toggle-chip mb-1" title="Tap to toggle">
-            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0l-4-4m4 4l-4 4M4 17h8m-8 0l4-4m-4 4l4 4"/>
-            </svg>
-            <span id="avgLabelText">Moving Avg</span>
-          </div>
-          <div id="avgSpeed" class="stat-value" style="color:var(--blue)">0 km/h</div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Gauge + controls -->
-    <div class="flex flex-col items-center gap-5">
+    <!-- ── Gauge Section ── -->
+    <section class="flex flex-col items-center gap-6 flex-1 w-full max-w-md">
 
       <!-- GPS status bar -->
-      <div class="flex items-center gap-2 text-xs font-semibold tracking-widest uppercase opacity-60">
+      <header class="flex items-center gap-2 text-xs font-semibold tracking-widest uppercase opacity-60 bg-white/5 px-4 py-1.5 rounded-full backdrop-blur-sm">
         <span id="gpsDot" class="gps-dot off"></span>
         <span id="gpsStatus">Acquiring GPS…</span>
-      </div>
+      </header>
 
       <!-- ── GAUGE VIEW ── -->
-      <div id="gaugeView" class="flex flex-col items-center gap-5">
+      <article id="gaugeView" class="w-full flex flex-col items-center gap-5">
         <div class="gauge-wrap gauge-ring relative">
           <svg viewBox="0 0 200 200" class="w-full h-full">
             <circle cx="100" cy="100" r="95" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
@@ -279,16 +250,16 @@
             <div class="speed-unit text-white/30 mt-1">KM/H</div>
           </div>
         </div>
-      </div>
+      </article>
 
       <!-- ── F1 LED VIEW ── -->
-      <div id="f1View" class="flex flex-col items-center gap-4 w-full max-w-xs landscape:max-w-sm landscape:pb-14">
+      <article id="f1View" class="flex flex-col items-center gap-4 w-full max-w-sm landscape:max-w-sm">
 
         <!-- Speed bar (15 LEDs) -->
         <div id="f1Bar" class="flex gap-1.5 items-end"></div>
 
         <!-- Big speed number -->
-        <div class="relative w-full bg-black border border-red-900/40 rounded-lg px-6 py-4 flex flex-col items-center"
+        <div class="relative w-full bg-black border border-red-900/40 rounded-xl px-6 py-4 flex flex-col items-center"
              style="box-shadow:inset 0 0 30px rgba(255,40,0,0.08)">
           <div class="f1-stat-label mb-1">SPEED</div>
           <div id="f1Speed" class="led" style="font-size:clamp(4rem,20vw,7rem)">000</div>
@@ -296,31 +267,86 @@
         </div>
 
         <!-- Stats grid -->
-        <div class="w-full grid grid-cols-3 gap-2">
-          <div class="bg-black border border-white/5 rounded-lg p-3 text-center">
+        <div class="w-full grid grid-cols-3 gap-3">
+          <div class="bg-black border border-white/5 rounded-xl p-3 text-center transition-transform hover:scale-105">
             <div class="f1-stat-label">MAX</div>
             <div id="f1Max" class="f1-stat-val" style="color:#00e676">0</div>
           </div>
-          <div class="bg-black border border-white/5 rounded-lg p-3 text-center">
+          <div class="bg-black border border-white/5 rounded-xl p-3 text-center transition-transform hover:scale-105">
             <div class="f1-stat-label">DIST</div>
             <div id="f1Dist" class="f1-stat-val" style="color:#ffb300">0.0</div>
           </div>
-          <div class="bg-black border border-white/5 rounded-lg p-3 text-center">
+          <div class="bg-black border border-white/5 rounded-xl p-3 text-center transition-transform hover:scale-105">
             <div class="f1-stat-label">AVG</div>
             <div id="f1Avg" class="f1-stat-val" style="color:#448aff">0</div>
           </div>
         </div>
 
-      </div>
+      </article>
 
       <!-- Action buttons -->
-      <div class="flex gap-3">
-        <button id="resetBtn" class="pill-btn danger">Reset Max</button>
-        <button id="fullscreenBtn" class="pill-btn primary">Fullscreen</button>
-      </div>
+      <footer class="flex gap-4 mt-2">
+        <button id="resetBtn" class="pill-btn danger shadow-lg shadow-red-500/10">Reset Max</button>
+        <button id="fullscreenBtn" class="pill-btn primary shadow-lg shadow-cyan-500/10">Fullscreen</button>
+      </footer>
 
-    </div>
+    </section>
+
+    <!-- ── Stats Section ── -->
+    <section class="grid grid-cols-2 landscape:grid-cols-1 gap-4 w-full landscape:w-56 max-w-md">
+
+      <!-- Speed stats -->
+      <article class="stat-card flex flex-col justify-between space-y-4 hover:bg-white/5 transition-colors">
+        <div>
+          <header class="stat-label flex items-center justify-between">
+            <span>Today Max</span>
+            <span class="text-green-400 opacity-60">↑</span>
+          </header>
+          <div id="maxSpeed" class="stat-value" style="color:var(--green)">0 km/h</div>
+        </div>
+        <div>
+          <header class="stat-label">Today Min</header>
+          <div id="minSpeed" class="stat-value" style="color:var(--amber)">0 km/h</div>
+        </div>
+        <div class="pt-2 border-t border-white/10">
+          <header class="stat-label">All-time Max</header>
+          <div id="allTimeMax" class="stat-value" style="color:var(--accent)">0 km/h</div>
+        </div>
+      </article>
+
+      <!-- Trip stats -->
+      <article class="stat-card flex flex-col justify-between space-y-4 hover:bg-white/5 transition-colors">
+        <div class="flex items-center justify-between">
+          <header class="stat-label">Distance</header>
+          <button id="resetDistanceBtn" class="opacity-40 hover:opacity-100 hover:text-red-400 transition-all p-1" title="Reset trip">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+          </button>
+        </div>
+        <div id="tripDistance" class="stat-value" style="color:var(--amber)">0.00 km</div>
+        
+        <div>
+          <header class="stat-label flex gap-1"><span>Time</span><span class="opacity-50">(Tot/Mov)</span></header>
+          <div id="tripTime" class="stat-value bg-black/20 rounded px-2 py-1 inline-block mt-1" style="color:var(--accent); font-size: 1.05rem; letter-spacing: 0.05em">0m / 0m</div>
+        </div>
+        
+        <div class="pt-2 border-t border-white/10">
+          <button id="avgLabel" class="toggle-chip mb-2 border-dashed hover:bg-blue-500/20 w-fit" title="Tap to toggle">
+            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0l-4-4m4 4l-4 4M4 17h8m-8 0l4-4m-4 4l4 4"/>
+            </svg>
+            <span id="avgLabelText">Moving Avg</span>
+          </button>
+          <div id="avgSpeed" class="stat-value" style="color:var(--blue)">0 km/h</div>
+        </div>
+      </article>
+
+    </section>
+
   </main>
+
+
 
   <!-- ────── History Drawer ────── -->
   <div id="historyDrawer"
@@ -391,9 +417,6 @@
     const MAX_ACCEL_FROM_GPS = 8;       // m/s² — implausible GPS jump threshold
     let lastGpsSpeedMs = 0;             // previous GPS speed in m/s
     let lastGpsTime = 0;                // timestamp of previous GPS fix
-    // Sustained motion gate
-    const MOTION_CONFIRM_MS = 5000;     // must be moving for this long before speed is shown
-    let movingSinceMs = 0;              // timestamp when continuous motion started (0 = not moving)
 
     // ======================  Element References  ======================
     const currentSpeedEl    = document.getElementById('currentSpeed');
@@ -634,6 +657,9 @@
     function onPositionUpdate(pos) {
       const speedRaw = pos.coords.speed;
       if (speedRaw === null || isNaN(speedRaw)) return;
+      
+      // GPS Accuracy Filter: Drop highly inaccurate signals to prevent wild jumps
+      if (pos.coords.accuracy > 40) return;
 
       const now = pos.timestamp || Date.now();
       let kmh = speedRaw * 3.6;
@@ -655,14 +681,7 @@
 
       if (kmh < IGNORE_SPEED_BELOW) kmh = 0;
 
-      // 3. Sustained motion gate: only confirm speed after moving for MOTION_CONFIRM_MS
-      if (kmh > 0) {
-        if (movingSinceMs === 0) movingSinceMs = now;
-      } else {
-        movingSinceMs = 0; // reset gate when stopped
-      }
-      const confirmedMoving = kmh > 0 && (now - movingSinceMs) >= MOTION_CONFIRM_MS;
-      const displaySpeed = confirmedMoving ? kmh : 0;
+      const displaySpeed = kmh;
 
       lastGpsSpeedMs = kmh / 3.6;
       const dtHours = (lastGpsTime > 0)
@@ -677,7 +696,7 @@
 
       if (dtHours > 0) {
         entry.totalTime = (entry.totalTime || 0) + dtHours;
-        if (confirmedMoving) {
+        if (kmh > 0) {
           entry.distance = (entry.distance || 0) + (kmh * dtHours);
           entry.movingTime = (entry.movingTime || 0) + dtHours;
         }
@@ -708,14 +727,35 @@
         window.addEventListener('devicemotion', onDeviceMotion);
       }
     }
+    // Gravity low-pass filter state
+    let _gravity = { x: 0, y: 0, z: 0 };
+
     function onDeviceMotion(e) {
-      const a = e.accelerationIncludingGravity;
-      if (!a) return;
-      // Remove gravity component magnitude approximation using high-pass isn't needed here;
-      // we use acceleration (without gravity) if available, else fall back
-      const acc = e.acceleration || a;
-      const mag = Math.sqrt((acc.x||0)**2 + (acc.y||0)**2 + (acc.z||0)**2);
-      // Low-pass smooth
+      let currentAcc = { x: 0, y: 0, z: 0 };
+      
+      if (e.acceleration && e.acceleration.x !== null) {
+        // Modern device: provides pure linear acceleration
+        currentAcc = e.acceleration;
+      } else if (e.accelerationIncludingGravity && e.accelerationIncludingGravity.x !== null) {
+        // Fallback: manually isolate and remove gravity
+        const aig = e.accelerationIncludingGravity;
+        const alpha = 0.8; // Filter smoothing factor
+        
+        // Low-pass filter to isolate gravity direction
+        _gravity.x = alpha * _gravity.x + (1 - alpha) * aig.x;
+        _gravity.y = alpha * _gravity.y + (1 - alpha) * aig.y;
+        _gravity.z = alpha * _gravity.z + (1 - alpha) * aig.z;
+        
+        // High-pass filter to extract linear acceleration
+        currentAcc.x = aig.x - _gravity.x;
+        currentAcc.y = aig.y - _gravity.y;
+        currentAcc.z = aig.z - _gravity.z;
+      } else {
+        return; // No usable data
+      }
+
+      const mag = Math.sqrt((currentAcc.x||0)**2 + (currentAcc.y||0)**2 + (currentAcc.z||0)**2);
+      // Low-pass smooth the final magnitude against noise
       accelMag = ACCEL_ALPHA * mag + (1 - ACCEL_ALPHA) * accelMag;
     }
 
@@ -924,11 +964,21 @@
 
     // Theme toggle
     let isF1 = false;
+    const iconF1Race = document.getElementById('iconF1Race');
+    const iconAnalog = document.getElementById('iconAnalog');
+    
     document.getElementById('themeToggle').addEventListener('click', () => {
       isF1 = !isF1;
       document.body.classList.toggle('f1', isF1);
-      document.getElementById('themeToggle').textContent = isF1 ? '🔵' : '🏎';
-      if (isF1) updateF1(currentSpeed);
+      
+      if (isF1) {
+        iconF1Race.classList.add('hidden');
+        iconAnalog.classList.remove('hidden');
+        updateF1(currentSpeed);
+      } else {
+        iconF1Race.classList.remove('hidden');
+        iconAnalog.classList.add('hidden');
+      }
     });
 
     // Hook into updateDisplay to also refresh F1 panel
