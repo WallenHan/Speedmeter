@@ -739,8 +739,8 @@
                     </div>
                   </div>
                   <div class="flex justify-end gap-3 text-[0.65rem] opacity-60 font-medium tracking-wide">
-                    <span>总计/Total: ${formatTime(totTime)}</span>
-                    <span>运动/Moving: ${formatTime(movTime)}</span>
+                    <span>Total: ${formatTime(totTime)}</span>
+                    <span>Moving: ${formatTime(movTime)}</span>
                   </div>
                 </div>`;
       }).join('');
@@ -750,9 +750,11 @@
     function onPositionUpdate(pos) {
       const speedRaw = pos.coords.speed;
       if (speedRaw === null || isNaN(speedRaw)) return;
-      
-      // GPS Accuracy Filter: Drop highly inaccurate signals to prevent wild jumps
-      if (pos.coords.accuracy > 40) return;
+
+      const accuracy = pos.coords.accuracy;
+
+      // Drop fixes too inaccurate to be useful (tightened from 40m → 25m)
+      if (accuracy > 25) return;
 
       const now = pos.timestamp || Date.now();
       let kmh = speedRaw * 3.6;
@@ -761,12 +763,12 @@
       if (accelMag < ACCEL_STILL_THRESHOLD) {
         kmh = 0;
       } else if (lastGpsTime > 0) {
-        // 2. Spike rejection: if implied acceleration from GPS delta is implausible
-        //    and the accelerometer doesn't support it, reject and keep last speed
+        // 2. Spike rejection: compare against raw last speed so forced-zero
+        //    doesn't make every restart look like a spike
         const dtSec = (now - lastGpsTime) / 1000;
         if (dtSec > 0 && dtSec < 10) {
           const impliedAccel = Math.abs(speedRaw - lastGpsSpeedMs) / dtSec;
-          if (impliedAccel > MAX_ACCEL_FROM_GPS && accelMag < impliedAccel * 0.3) {
+          if (impliedAccel > MAX_ACCEL_FROM_GPS && accelMag < impliedAccel * 0.5) {
             kmh = lastGpsSpeedMs * 3.6; // reject spike, hold last valid speed
           }
         }
@@ -774,17 +776,17 @@
 
       if (kmh < IGNORE_SPEED_BELOW) kmh = 0;
 
-      const displaySpeed = kmh;
-
-      lastGpsSpeedMs = kmh / 3.6;
+      // Track raw speed for next spike comparison (not the filtered/zeroed value)
+      lastGpsSpeedMs = speedRaw;
       const dtHours = (lastGpsTime > 0)
         ? Math.max(0, Math.min(now - lastGpsTime, 60000)) / 3600000
         : 0;
       lastGpsTime = now;
-      currentSpeed = displaySpeed;
+      currentSpeed = kmh;
 
       const entry = getTodayEntry();
-      if (currentSpeed > entry.maxSpeed) entry.maxSpeed = currentSpeed;
+      // Only update max speed when fix is accurate enough (≤15m)
+      if (currentSpeed > entry.maxSpeed && accuracy <= 15) entry.maxSpeed = currentSpeed;
       if (currentSpeed > 0 && (entry.minSpeed === 0 || currentSpeed < entry.minSpeed)) entry.minSpeed = currentSpeed;
 
       if (dtHours > 0) {
