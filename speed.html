@@ -234,6 +234,19 @@
         <div class="gauge-wrap gauge-ring relative">
           <svg viewBox="0 0 200 200" class="w-full h-full">
             <circle cx="100" cy="100" r="95" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+
+            <!-- Arc track: green → amber → red (240° sweep, starts at 240° SVG) -->
+            <path d="M 27.25,142.00 A 84,84 0 0,1 134.17,23.26" fill="none"
+                  stroke="#00e676" stroke-width="5" stroke-linecap="round" opacity="0.2"/>
+            <path d="M 134.17,23.26 A 84,84 0 0,1 179.89,74.04" fill="none"
+                  stroke="#ffb300" stroke-width="5" stroke-linecap="round" opacity="0.2"/>
+            <path d="M 179.89,74.04 A 84,84 0 0,1 172.75,142.00" fill="none"
+                  stroke="#ff3b5c" stroke-width="5" stroke-linecap="round" opacity="0.2"/>
+
+            <!-- Progress arc (filled portion, updated by JS) -->
+            <path id="arcProgress" fill="none" stroke="#00e676" stroke-width="5"
+                  stroke-linecap="round" opacity="0.9"/>
+
             <g id="ticks"></g>
             <line id="needleShadow" x1="100" y1="105" x2="100" y2="28"
                   stroke="rgba(0,0,0,0.5)" stroke-width="5" stroke-linecap="round"/>
@@ -504,6 +517,46 @@
     }
     drawTicks();
 
+    // ---- Arc progress helpers ----
+    const ARC_CX = 100, ARC_CY = 100, ARC_R = 84;
+    // Gauge: 0 speed = 210° SVG angle, full = 210+240=450° (=90°)
+    function polarToXY(angleDeg) {
+      const rad = (angleDeg - 90) * Math.PI / 180;
+      return { x: ARC_CX + ARC_R * Math.cos(rad), y: ARC_CY + ARC_R * Math.sin(rad) };
+    }
+    function arcPath(startDeg, endDeg) {
+      if (endDeg <= startDeg) return '';
+      const s = polarToXY(startDeg), e = polarToXY(endDeg);
+      const large = (endDeg - startDeg) > 180 ? 1 : 0;
+      return `M ${s.x.toFixed(2)},${s.y.toFixed(2)} A ${ARC_R},${ARC_R} 0 ${large},1 ${e.x.toFixed(2)},${e.y.toFixed(2)}`;
+    }
+
+    const arcProgressEl = document.getElementById('arcProgress');
+    const MAX_SPEED_ARC = 140;
+    // Zone boundaries as % of sweep
+    const ZONE_AMBER = 0.6, ZONE_RED = 0.8;
+    const ARC_START = 240; // SVG degrees: 240° = bottom-left (gauge 0)
+
+    function updateArc(speed) {
+      const pct = Math.min(speed / MAX_SPEED_ARC, 1);
+      if (pct <= 0) { arcProgressEl.setAttribute('d', ''); return; }
+
+      const sweepDeg = pct * 240;
+      const endAngle = ARC_START + sweepDeg;
+
+      // Color based on zone
+      let color;
+      if (pct < ZONE_AMBER)      color = '#00e676';
+      else if (pct < ZONE_RED)   color = '#ffb300';
+      else                        color = '#ff3b5c';
+
+      arcProgressEl.setAttribute('d', arcPath(ARC_START, endAngle));
+      arcProgressEl.setAttribute('stroke', color);
+      // Glow intensity scales with speed
+      const glowSize = 4 + pct * 8;
+      arcProgressEl.style.filter = `drop-shadow(0 0 ${glowSize.toFixed(0)}px ${color})`;
+    }
+
     // ---- Set needle rotation ----
     function setNeedleAngle(speed) {
       const maxDisplaySpeed = 140;
@@ -511,7 +564,7 @@
       const angle = MIN_NEEDLE_ANGLE + pct * MAX_NEEDLE_ANGLE;
       needleEl.setAttribute('transform', `rotate(${angle}, 100, 105)`);
       if (needleShadow) needleShadow.setAttribute('transform', `rotate(${angle}, 100, 105)`);
-
+      updateArc(speed);
       // Highlight trail behind needle
       for (const item of ticksData) {
         // slightly ahead tolerance to light up current target smoothly
