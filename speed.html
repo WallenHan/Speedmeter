@@ -807,11 +807,19 @@
     }
 
     // ---- Fullscreen toggle ----
-    function requestFullscreen() {
-      const el = document.documentElement;
-      if (el.requestFullscreen) el.requestFullscreen();
-      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-      else if (el.msRequestFullscreen) el.msRequestFullscreen();
+    function toggleFullscreen() {
+      const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+      
+      if (!isFullscreen) {
+        const el = document.documentElement;
+        if (el.requestFullscreen) el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        else if (el.msRequestFullscreen) el.msRequestFullscreen();
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if (document.msExitFullscreen) document.msExitFullscreen();
+      }
     }
 
     // ---- Reset dialog handling ----
@@ -905,7 +913,7 @@
     cancelReset.addEventListener('click', () => resetConfirm.classList.add('hidden'));
     confirmReset.addEventListener('click', executeReset);
     const fullscreenBtn = document.getElementById('fullscreenBtn');
-    if (fullscreenBtn) fullscreenBtn.addEventListener('click', requestFullscreen);
+    if (fullscreenBtn) fullscreenBtn.addEventListener('click', toggleFullscreen);
 
     // Run init once the DOM is ready
     document.addEventListener('DOMContentLoaded', init);
